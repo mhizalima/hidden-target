@@ -6,8 +6,8 @@ const CLUES = ['bag', 'cap', 'loiter']
 const LENS = 160
 const TIME_LIMIT = 90
 const FREE_HINTS = 3
-const HINT_X = 870
-const HINT_Y = 500
+const HINT_X = 860
+const HINT_Y = 494
 
 class MarketScene extends Phaser.Scene {
   constructor() { super('market') }
@@ -72,7 +72,7 @@ class MarketScene extends Phaser.Scene {
     this.timeText = this.add.text(20, 92, '', { fontSize: '18px', color: '#000' }).setDepth(900)
 
     // hint button
-    this.hintBg = this.add.rectangle(HINT_X, HINT_Y, 140, 40, 0xffd23f)
+        this.hintBg = this.add.rectangle(HINT_X, HINT_Y, 180, 56, 0xffd23f)
       .setStrokeStyle(3, 0x000000)
       .setDepth(900)
     this.hintLabel = this.add.text(HINT_X, HINT_Y, '', {
@@ -109,9 +109,17 @@ class MarketScene extends Phaser.Scene {
     ])
     this.moveLens({ x: 480, y: 270 })
 
-    this.input.on('pointermove', (pointer) => this.moveLens(pointer))
+        this.aiming = false
+
+    this.input.on('pointermove', (pointer) => {
+      if (pointer.wasTouch) {
+        if (this.aiming) this.moveLens(this.aimPoint(pointer))
+      } else {
+        this.moveLens(pointer)
+      }
+    })
+
     this.input.on('pointerdown', (pointer, over) => {
-      this.moveLens(pointer)
       if (this.over) {
         if (over.length > 0) return
         this.scene.restart()
@@ -121,12 +129,31 @@ class MarketScene extends Phaser.Scene {
         this.useHint()
         return
       }
-      this.shoot(pointer.x, pointer.y)
+      if (pointer.wasTouch) {
+        this.aiming = true
+        this.moveLens(this.aimPoint(pointer))
+      } else {
+        this.moveLens(pointer)
+        this.shoot(pointer.x, pointer.y)
+      }
+    })
+
+    this.input.on('pointerup', (pointer) => {
+      if (!pointer.wasTouch || !this.aiming) return
+      this.aiming = false
+      if (this.over) return
+      const a = this.aimPoint(pointer)
+      this.shoot(a.x, a.y, 24)
     })
   }
 
-  inHintButton(pointer) {
-    return Math.abs(pointer.x - HINT_X) <= 70 && Math.abs(pointer.y - HINT_Y) <= 20
+    inHintButton(pointer) {
+    return Math.abs(pointer.x - HINT_X) <= 90 && Math.abs(pointer.y - HINT_Y) <= 28
+  }
+
+  aimPoint(pointer) {
+    // aim 110 units above the finger so it doesn't hide the target
+    return { x: pointer.x, y: Math.max(0, pointer.y - 110) }
   }
 
   useHint() {
@@ -160,9 +187,9 @@ class MarketScene extends Phaser.Scene {
     this.cross.setPosition(pointer.x, pointer.y)
   }
 
-  shoot(x, y) {
+    shoot(x, y, radius = 16) {
     let target = null
-    let best = 16
+    let best = radius
     for (const p of this.people) {
       if (p.dead) continue
       const d = Math.hypot(p.x - x, p.y - y)
@@ -284,7 +311,7 @@ class MarketScene extends Phaser.Scene {
   }
 
     makeButton(x, y, label, onClick) {
-    const bg = this.add.rectangle(x, y, 180, 38, 0xffffff)
+        const bg = this.add.rectangle(x, y, 200, 52, 0xffffff)
       .setStrokeStyle(3, 0x000000)
       .setDepth(1200)
       .setInteractive({ useHandCursor: true })

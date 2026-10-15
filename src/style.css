@@ -1,1 +1,11 @@
-body { margin: 0; background: #111; }
+body {
+  margin: 0;
+  background: #111;
+  touch-action: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+canvas {
+  touch-action: none;
+}
